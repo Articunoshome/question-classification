@@ -1,6 +1,7 @@
 """
 The module contains all the classes and functions of creating training and testing models
 """
+import time
 from collections import Counter
 
 import numpy as np
@@ -13,16 +14,17 @@ class Classifier(nn.Module):
       Question classification model class
     """
 
-    def __init__(self, vocab_size, embed_dim,
-                 num_class, hidden_dim, use_bilstm, use_pre_emb, pre_emb, freeze):
+    def __init__(self, vocab_size, embed_dim, num_class, hidden_dim, use_bilstm,
+                 use_pre_emb, pre_emb, freeze, lr=0.01, gamma=0.9, device='cpu'):
         super().__init__()
-        self.lr = 0.01
-        self.gamma = 0.9
-        self.device = 'cpu'
-        self.criterion = torch.nn.CrossEntropyLoss().to(self.device)
+        self.train_loss = []
+        self.valid_loss = []
+        self.lr = lr
+        self.gamma = gamma
+        self.device = device
+        self.criterion = None
         self.optimizer = None
-        self.scheduler = torch.optim.lr_scheduler.StepLR(
-            self.optimizer, 1, gamma=self.gamma)
+        self.scheduler = None
         self.vocab_size = vocab_size
         self.hidden_dim = hidden_dim
         self.use_pre_emb = use_pre_emb
@@ -65,6 +67,7 @@ class Classifier(nn.Module):
         self.embedding.padding_idx = 0
         self.fc = nn.Linear(
             self.hidden_dim*2 if self.use_bilstm else self.embed_dim, self.num_class)
+        self.set_learning_params(self.lr, self.gamma, self.device)
 
     def set_learning_params(self, lr=0.1, gamma=0.9, device='cpu'):
         """
@@ -118,6 +121,7 @@ class Classifier(nn.Module):
             # Adjust the learning rate
         self.scheduler.step()
 
+        self.train_loss.append(train_loss / len(sub_train_))
         return train_loss / len(sub_train_), train_acc / len(sub_train_)
 
     def test(self, data_):
@@ -134,6 +138,7 @@ class Classifier(nn.Module):
                 loss += loss.item()
                 acc += (output.argmax(1) == cls).sum().item() / len(output)
 
+        self.valid_loss.append(loss / len(data_))
         return loss / len(data_), acc / len(data_)
 
     def predict(self, sentences: "List of sentence tokens") -> "Returns the predicted labels":
@@ -141,6 +146,7 @@ class Classifier(nn.Module):
         Provided the sentence tokens the function will predict and return the
         label tokens for a list of sentences
         """
+        self.eval()
         predictions = []
         for sentence in sentences:
             length = [len(sentence)]  # compute no. of words
@@ -150,8 +156,30 @@ class Classifier(nn.Module):
             tensor = tensor.unsqueeze(1).T
             length_tensor = torch.LongTensor(length)  # convert to tensor
             prediction = self(tensor, length_tensor)  # prediction
-            predictions.append(prediction.argmax())
+            predictions.append(prediction.argmax().item())
         return np.array(predictions)
+
+    def fit(self, train_gen, valid_gen, epochs, name="model"):
+        min_valid_loss = float('inf')
+        for epoch in range(epochs):
+            start_time = time.time()
+            train_loss, train_acc = self.train_func(train_gen)
+            valid_loss, valid_acc = self.test(valid_gen)
+            if valid_loss < min_valid_loss:
+                min_valid_loss = valid_loss
+                max_acc = valid_acc
+                torch.save(self.state_dict(), name+'_saved_weights.pt')
+            secs = int(time.time() - start_time)
+            mins = secs / 60
+            secs = secs % 60
+
+            print('Epoch: %d' % (epoch + 1),
+                  " | time in %d minutes, %d seconds" % (mins, secs))
+            print(
+                f'\tLoss: {train_loss:.4f}(train)\t|\tAcc: {train_acc * 100:.1f}%(train)')
+            print(
+                f'\tLoss: {valid_loss:.4f}(valid)\t|\tAcc: {valid_acc * 100:.1f}%(valid)')
+        return max_acc
 
 
 class Ensemble():
@@ -159,12 +187,16 @@ class Ensemble():
     Ensemble model for comibining the results and bagging it
     """
 
-    def __init__(self, model_list):
+    def __init__(self, model_list, device='cpu'):
         self.models = model_list
+        self.device = device
 
-    def predict(self, text, offset):
-        # clone to make sure text and offsets are not changed by inplace methods
-        y_pred_counter = Counter([model(text.clone(), offset.clone()).argmax().item()
-                                  for model in self.models])
-        y_pred = y_pred_counter.most_common(1)[0][0]
-        return y_pred
+    def predict(self, sentences: "List of sentence tokens") -> "Returns the predicted labels":
+        """
+        Provided the sentence tokens the function will predict and return the
+        label tokens for a list of sentences
+        """
+        predictions = np.array([model.predict(sentences)
+                                for model in self.models])
+        return np.array([Counter(predictions[:, i]).most_common(1)[0][0]
+                         for i in range(predictions.shape[1])])

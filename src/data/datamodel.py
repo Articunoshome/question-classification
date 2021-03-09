@@ -1,7 +1,14 @@
+"""
+Classes and function to handle dataset
+"""
 from torch.utils.data import Dataset
 
 
 class QuestionDataset(Dataset):
+    """
+        Class for creating iterator to question dataset
+    """
+
     def __init__(self, questions, offsets, labels):
         self.questions = questions
         self.offsets = offsets
