@@ -7,7 +7,7 @@ import random
 
 import numpy as np
 import torch
-from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score, f1_score
 from torch.utils.data.sampler import SubsetRandomSampler
 
 from data.datamodel import QuestionDataset
@@ -94,8 +94,9 @@ def test():
     x_test = TEXT.convert_sentences_to_encoding(x_test)
     y_test = np.array(LABEL.convert_labels_to_encodings(y_test))
     y_pred = model.predict(x_test)
-    test_acc = (y_pred == y_test).sum().item()/len(y_test)
-    score = f1_score(y_test, y_pred, average='micro')
+
+    test_acc = accuracy_score(y_test, y_pred)
+    score = f1_score(y_test, y_pred, average='weighted')
     perf_metrics = [
         f'\tAccuracy: {test_acc * 100:.1f}', f'\tF1-Score: {score:.3f}']
 
