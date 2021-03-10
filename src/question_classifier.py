@@ -96,14 +96,11 @@ def test():
     x_test = TEXT.convert_sentences_to_encoding(x_test)
     y_test = np.array(LABEL.convert_labels_to_encodings(y_test))
     y_pred = model.predict(x_test)
-
-    with open("../data/output/output.txt", 'w') as fp:
-        fp.writelines(LABEL.convert_encodings_to_labels(y_pred))
-
     test_acc = (y_pred == y_test).sum().item()/len(y_test)
     score = f1_score(y_test, y_pred, average='micro')
     perf_metrics = [
         f'\tAccuracy: {test_acc * 100:.1f}', f'\F1-Score: {score:.3f}']
+
     with open("../data/output/output.txt", 'w') as fp:
         fp.writelines(LABEL.convert_encodings_to_labels(y_pred))
         fp.writelines(perf_metrics)
