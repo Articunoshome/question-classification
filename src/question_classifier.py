@@ -40,15 +40,13 @@ LABEL = None
 gamma = 0.9
 lowercase = True
 ensemble_size = 0
+dataset = None
 
 
 def train():
     """
         Train the model
     """
-    dataset = QuestionDataset(question_tokens, seq_lengths,
-                              LABEL.build_labels(labels))
-
     # No. of unique tokens in text
     print("Size of TEXT vocabulary:", VOCAB_SIZE)
 
@@ -85,7 +83,7 @@ def test():
     print('Checking the results of test dataset...')
     x_test = []
     y_test = []
-    with open(test_path) as fp:
+    with open(test_path, errors='ignore') as fp:
         test_text = fp.readlines()
 
     for line in test_text:
@@ -99,17 +97,20 @@ def test():
     test_acc = (y_pred == y_test).sum().item()/len(y_test)
     score = f1_score(y_test, y_pred, average='micro')
     perf_metrics = [
-        f'\tAccuracy: {test_acc * 100:.1f}', f'\F1-Score: {score:.3f}']
+        f'\tAccuracy: {test_acc * 100:.1f}', f'\tF1-Score: {score:.3f}']
 
     with open("../data/output/output.txt", 'w') as fp:
-        fp.writelines(LABEL.convert_encodings_to_labels(y_pred))
+        fp.writelines(
+            map(lambda x: x+'\n', LABEL.convert_encodings_to_labels(y_pred)))
+    with open("../data/output/performance.txt", 'w') as fp:
         fp.writelines(perf_metrics)
-    print(perf_metrics)
+
+    print(''.join(perf_metrics))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-config', type=str, required=True,
+    parser.add_argument('--config', type=str, required=True,
                         help='Configuration file')
     parser.add_argument('--train', action='store_true',
                         help='Training mode - model is saved')
@@ -119,29 +120,28 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.sections()
     config.read(args.config)
-    print(config.keys())
 
-    train_path = config["path_train"]
-    test_path = config["path_test"]
-    name = config["model"]
-    model_path = config["path_model"]
-    pre_emb_path = config["path_pre_emb"]
+    train_path = config["PATH"]["path_train"]
+    test_path = config["PATH"]["path_test"]
+    name = config["MODEL"]["model"]
+    model_path = config["PATH"]["path_model"]
+    pre_emb_path = config["PATH"].get("path_pre_emb")
 
-    BATCH_SIZE = config["batch_size"]
-    N_EPOCHS = config["epoch"]
-    EMBED_DIM = config["word_embedding_dim"]
-    HIDDEN_NODES = config["hidden_dim"]
-    lr = config["lr_param"]
-    STOP_FINE_TUNING = config["freeze"]
-    min_count = config["minimum_word_freq"]
-    use_bilstm = config["use_bilstm"]
-    use_pre_emb = config["use_pre_emb"]
-    ensemble_size = config["ensemble_size"]
-    lowercase = config["lowercase"]
+    BATCH_SIZE = int(config["MODEL"]["batch_size"])
+    N_EPOCHS = int(config["MODEL"]["epoch"])
+    EMBED_DIM = int(config["MODEL"]["word_embedding_dim"])
+    HIDDEN_NODES = int(config["MODEL"]["hidden_dim"])
+    lr = float(config["MODEL"]["lr_param"])
+    STOP_FINE_TUNING = config["MODEL"].getboolean("freeze")
+    min_count = int(config["VOCAB"]["minimum_word_freq"])
+    use_bilstm = config["MODEL"].getboolean("use_bilstm")
+    use_pre_emb = config["MODEL"].getboolean("use_pre_emb")
+    ensemble_size = int(config["MODEL"].get("ensemble_size"))
+    lowercase = config["VOCAB"].getboolean("lowercase")
 
     if args.train:
         # call train function
-        with open(train_path) as fp:
+        with open(train_path, errors='ignore') as fp:
             sents = fp.readlines()
         data_set = np.array(list(map(lambda x: x.split(' ', 1), sents)))
         questions, labels = data_set[:, 1], data_set[:, 0].tolist()
@@ -149,6 +149,13 @@ if __name__ == '__main__':
         LABEL = LabelEncoder()
         question_tokens, seq_lengths = TEXT.build_vocab(
             questions, min_freq=3, emb_file=pre_emb_path)
+        dataset = QuestionDataset(question_tokens, seq_lengths,
+                                  LABEL.build_labels(labels))
+        with open(text_vocab_path, 'wb') as fp:
+            pickle.dump(TEXT, fp)
+
+        with open(label_vocab_path, 'wb') as fp:
+            pickle.dump(LABEL, fp)
 
         VOCAB_SIZE = len(TEXT.itos)
         NUM_CLASS = len(set(LABEL.itol))

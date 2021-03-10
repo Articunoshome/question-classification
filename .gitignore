@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 data/models/glove.small.txt
 .DS_Store
+data/models/*.model*
+src/question_classifier.py

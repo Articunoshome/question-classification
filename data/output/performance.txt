@@ -1,0 +1,1 @@
+	Accuracy: 72.0	F1-Score: 0.720

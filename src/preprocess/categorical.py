@@ -1,7 +1,7 @@
 """
 Contains all the classes and functions required for preprocessing categorical data
 """
-
+import torch
 
 class LabelEncoder():
     def __init__(self):
