@@ -1,5 +1,3 @@
-# changes made to remove torch text
-# All the configurations -> Need to be moved to config file in the script
 import argparse
 import configparser
 import pickle
