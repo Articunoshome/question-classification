@@ -196,8 +196,7 @@ class Ensemble():
         self.device = device
 
     def fit(self, train_gen, valid_gen, epochs, path_model="../data/models/saved_weights.model"):
-        for i, model in enumerate(self.models):
-            model.fit(train_gen, valid_gen, epochs, path_model+"."+str(i))
+        return np.mean([model.fit(train_gen, valid_gen, epochs, path_model+"."+str(i)) for i, model in enumerate(self.models)])
 
     def predict(self, sentences: "List of sentence tokens") -> "Returns the predicted labels":
         """

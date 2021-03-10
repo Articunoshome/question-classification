@@ -130,4 +130,3 @@ dmypy.json
 data/models/glove.small.txt
 .DS_Store
 data/models/*.model*
-data/output/*
