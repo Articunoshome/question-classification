@@ -171,8 +171,17 @@ if __name__ == '__main__':
 
         VOCAB_SIZE = len(TEXT.itos)
         NUM_CLASS = len(set(LABEL.itol))
-        model = Classifier(VOCAB_SIZE, EMBED_DIM, NUM_CLASS, HIDDEN_NODES, use_bilstm=use_bilstm, use_pre_emb=use_pre_emb,
-                           pre_emb=TEXT.itov if use_pre_emb else None, freeze=STOP_FINE_TUNING, lr=lr, gamma=gamma, device=device).to(device)
-        model.load_state_dict(torch.load(model_path))
-        model.to(device)
+        if ensemble_size:
+            model_list = [Classifier(VOCAB_SIZE, EMBED_DIM, NUM_CLASS, HIDDEN_NODES, use_bilstm=use_bilstm, use_pre_emb=use_pre_emb,
+                                     pre_emb=TEXT.itov if use_pre_emb else None, freeze=STOP_FINE_TUNING, lr=lr, gamma=gamma, device=device).to(device) for i in range(ensemble_size)]
+            for i, m in enumerate(model_list):
+                m.load_state_dict(torch.load(model_path+"."+str(i)))
+                m.to(device)
+            model = Ensemble(model_list, device)
+
+        else:
+            model = Classifier(VOCAB_SIZE, EMBED_DIM, NUM_CLASS, HIDDEN_NODES, use_bilstm=use_bilstm, use_pre_emb=use_pre_emb,
+                               pre_emb=TEXT.itov if use_pre_emb else None, freeze=STOP_FINE_TUNING, lr=lr, gamma=gamma, device=device).to(device)
+            model.load_state_dict(torch.load(model_path))
+            model.to(device)
         test()
