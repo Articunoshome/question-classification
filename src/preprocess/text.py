@@ -41,7 +41,7 @@ class VocabBuilder():
     Class to build the text vocabulary
     """
 
-    def __init__(self):
+    def __init__(self, lowercase=True):
         self.stoi = dict()
         self.itos = []
         self.embedding = dict()
@@ -49,7 +49,7 @@ class VocabBuilder():
         self.tokens = []
         self.unk_token = "#UNK#"
         self.pad_token = "<pad>"
-        self.lower = True
+        self.lower = lowercase
 
     def _basic_english_normalize(self, line):
         if self.lower:
@@ -108,8 +108,22 @@ class VocabBuilder():
             self.itov.insert(0, [0.0]*300)
         self.stoi.update(zip(self.itos, range(len(self.itos))))
 
-    def build_vocab(self, text_list, stop_words=[], min_freq=1,
+    def build_vocab(self, text_list, min_freq=1,
                     emb_file=None, unk_token="#UNK#", pad_token="<pad>", lower=True):
+        stop_words = ["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you",
+                      "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself",
+                      "she", "her", "hers", "herself", "it", "its", "itself", "they", "them",
+                      "their", "theirs", "themselves", "this", "that", "these", "those",
+                      "a", "an", "the", "and", "but", "if", "or", "because", "as", "until",
+                      "while", "of", "at", "by", "for", "with", "about", "against",
+                      "between", "into", "through", "during", "before", "after", "above",
+                      "below", "to", "from", "up", "down", "in", "out", "on", "off", "over",
+                      "under", "again", "further", "then", "once", "here", "there", "all", "any",
+                      "both", "each", "few", "more", "most", "other", "some", "such", "no",
+                      "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t",
+                      "just", "don", "now", "'", ",", "''", "``", "'s", "!", "(", ")", "-", "[",
+                      "]", "{", "}", ";", ":", "?", "@", "*", "_", "~", "."]
+
         self.unk_token = unk_token
         self.pad_token = pad_token
         self.lower = lower

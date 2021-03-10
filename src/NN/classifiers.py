@@ -19,6 +19,8 @@ class Classifier(nn.Module):
         super().__init__()
         self.train_loss = []
         self.valid_loss = []
+        self.train_accuracy = []
+        self.valid_accuracy = []
         self.lr = lr
         self.gamma = gamma
         self.device = device
@@ -122,6 +124,7 @@ class Classifier(nn.Module):
         self.scheduler.step()
 
         self.train_loss.append(train_loss / len(sub_train_))
+        self.train_accuracy.append(train_acc / len(sub_train_))
         return train_loss / len(sub_train_), train_acc / len(sub_train_)
 
     def test(self, data_):
@@ -139,6 +142,7 @@ class Classifier(nn.Module):
                 acc += (output.argmax(1) == cls).sum().item() / len(output)
 
         self.valid_loss.append(loss / len(data_))
+        self.valid_accuracy.append(acc / len(data_))
         return loss / len(data_), acc / len(data_)
 
     def predict(self, sentences: "List of sentence tokens") -> "Returns the predicted labels":
@@ -159,7 +163,7 @@ class Classifier(nn.Module):
             predictions.append(prediction.argmax().item())
         return np.array(predictions)
 
-    def fit(self, train_gen, valid_gen, epochs, name="model"):
+    def fit(self, train_gen, valid_gen, epochs, path_model="../data/models/saved_weights.model"):
         min_valid_loss = float('inf')
         for epoch in range(epochs):
             start_time = time.time()
@@ -168,7 +172,7 @@ class Classifier(nn.Module):
             if valid_loss < min_valid_loss:
                 min_valid_loss = valid_loss
                 max_acc = valid_acc
-                torch.save(self.state_dict(), name+'_saved_weights.pt')
+                torch.save(self.state_dict(), path_model)
             secs = int(time.time() - start_time)
             mins = secs / 60
             secs = secs % 60
@@ -190,6 +194,10 @@ class Ensemble():
     def __init__(self, model_list, device='cpu'):
         self.models = model_list
         self.device = device
+
+    def fit(self, train_gen, valid_gen, epochs, name="model"):
+        for i, model in enumerate(self.models):
+            model.fit(train_gen, valid_gen, epochs, name+"."+str(i))
 
     def predict(self, sentences: "List of sentence tokens") -> "Returns the predicted labels":
         """
