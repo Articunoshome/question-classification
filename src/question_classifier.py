@@ -55,7 +55,7 @@ def train():
     # Creating data indices for training and validation splits:
     dataset_size = len(dataset)
     indices = list(range(dataset_size))
-    validation_split = .3
+    validation_split = .1
     split = int(np.floor(validation_split * dataset_size))
     np.random.seed(SEED)
     np.random.shuffle(indices)
