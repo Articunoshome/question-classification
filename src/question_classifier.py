@@ -42,7 +42,7 @@ lowercase = True
 ensemble_size = 0
 
 
-def train(model, question_tokens, seq_lengths):
+def train():
     """
         Train the model
     """
@@ -81,7 +81,7 @@ def train(model, question_tokens, seq_lengths):
     print(f"Model with validation accuracy: {max_acc * 100:.1f}% was saved")
 
 
-def test(model):
+def test():
     print('Checking the results of test dataset...')
     x_test = []
     y_test = []
@@ -140,6 +140,7 @@ if __name__ == '__main__':
     use_bilstm = config["use_bilstm"]
     use_pre_emb = config["use_pre_emb"]
     ensemble_size = config["ensemble_size"]
+    lowercase = config["lowercase"]
 
     if args.train:
         # call train function
@@ -162,7 +163,7 @@ if __name__ == '__main__':
             model = Classifier(VOCAB_SIZE, EMBED_DIM, NUM_CLASS, HIDDEN_NODES, use_bilstm=use_bilstm, use_pre_emb=use_pre_emb,
                                pre_emb=TEXT.itov if use_pre_emb else None, freeze=STOP_FINE_TUNING, lr=lr, gamma=gamma, device=device).to(device)
 
-        train(model, question_tokens, seq_lengths)
+        train()
 
     elif args.test:
         with open(text_vocab_path, 'rb') as fp:
@@ -177,4 +178,4 @@ if __name__ == '__main__':
                            pre_emb=TEXT.itov if use_pre_emb else None, freeze=STOP_FINE_TUNING, lr=lr, gamma=gamma, device=device).to(device)
         model.load_state_dict(torch.load(model_path))
         model.to(device)
-        test(model)
+        test()
