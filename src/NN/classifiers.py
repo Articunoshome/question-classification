@@ -191,7 +191,7 @@ class Ensemble():
     Ensemble model for comibining the results and bagging it
     """
 
-    def __init__(self, model_list, device='cpu'):
+    def __init__(self, model_list, device):
         self.models = model_list
         self.device = device
 
