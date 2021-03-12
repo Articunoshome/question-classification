@@ -109,17 +109,24 @@ def test():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    # Read the arguments by the user
+
+    #Get the config file
     parser.add_argument('--config', type=str, required=True,
                         help='Configuration file')
+    #Get if train
     parser.add_argument('--train', action='store_true',
                         help='Training mode - model is saved')
+    #Get if test
     parser.add_argument('--test', action='store_true',
                         help='Testing mode - needs a model to load')
+    
     args = parser.parse_args()
     config = configparser.ConfigParser()
     config.sections()
     config.read(args.config)
 
+    #Get all the configuration variabled from the config file
     train_path = config["PATH"]["path_train"]
     test_path = config["PATH"]["path_test"]
     name = config["MODEL"]["model"]
@@ -144,20 +151,25 @@ if __name__ == '__main__':
             sents = fp.readlines()
         data_set = np.array(list(map(lambda x: x.split(' ', 1), sents)))
         questions, labels = data_set[:, 1], data_set[:, 0].tolist()
+        #Build the vocab for text
         TEXT = VocabBuilder(lowercase)
+        #Create categorical encoder
         LABEL = LabelEncoder()
         question_tokens, seq_lengths = TEXT.build_vocab(
             questions, min_freq=3, emb_file=pre_emb_path)
+        #Create a torch generator for the dataset
         dataset = QuestionDataset(question_tokens, seq_lengths,
                                   LABEL.build_labels(labels))
+        #Stire the vocab
         with open(text_vocab_path, 'wb') as fp:
             pickle.dump(TEXT, fp)
-
+        #Store the token encoder
         with open(label_vocab_path, 'wb') as fp:
             pickle.dump(LABEL, fp)
 
         VOCAB_SIZE = len(TEXT.itos)
         NUM_CLASS = len(set(LABEL.itol))
+        #If ensemble size is there create a list of of classifiers using the configurations and pass them to ensemble model
         if ensemble_size:
             model_list = [Classifier(VOCAB_SIZE, EMBED_DIM, NUM_CLASS, HIDDEN_NODES, use_bilstm=use_bilstm, use_pre_emb=use_pre_emb,
                                      pre_emb=TEXT.itov if use_pre_emb else None, freeze=STOP_FINE_TUNING, lr=lr, gamma=gamma, device=device).to(device) for i in range(ensemble_size)]
@@ -165,7 +177,7 @@ if __name__ == '__main__':
         else:
             model = Classifier(VOCAB_SIZE, EMBED_DIM, NUM_CLASS, HIDDEN_NODES, use_bilstm=use_bilstm, use_pre_emb=use_pre_emb,
                                pre_emb=TEXT.itov if use_pre_emb else None, freeze=STOP_FINE_TUNING, lr=lr, gamma=gamma, device=device).to(device)
-
+        #Call train function
         train()
 
     elif args.test:
