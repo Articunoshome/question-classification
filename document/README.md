@@ -48,3 +48,16 @@
     * `convert_sentences_to_encoding` function is used to get the encoded tokens from the list of input sentences.
  
     * `convert_encoding_to_sentences` function is used to get the list of sentences from the encoded sentence tokens
+
+* src\question_classifier.py
+
+  This is the main script for our code. It contains the part about training and testing of our model. 
+
+  * The `train` function is used for training our model. 
+  In this function we input the training dataset and perform the train validation split. 
+    We use the torch --> data --> subsetrandomsampler function to create a generator for question dataset and feed this generator to the DataLoader. Once we created the dataloaders from these samples they are fed into the model for training.
+
+  * The `test` function is used for testing our model on the test dataset. The input sentences and the labels are encoded and then fed
+    to the model for prediction. Then we get the accuracy score and the weighted f1 score on the predictions made by the model.
+  * The main block of the code parses the command line arguments and gets the configuration file, mode of operation (train/test). 
+  If its train then the training data set is read, the vocabulory and label encoder is created, and the model object is created and the train function is called. Otherwise the vocabulary, label encoder are loaded. The model is is created based on the configurations and the weights are loaded from the saved model file. The training dataset is opened and performed preprocessing and train function is called. the predicted classes are stored in the `/data/output/output.txt` file and the performance measure is stored in `/data/output/performance.txt` file.

@@ -87,6 +87,10 @@ class VocabBuilder():
             return self.embedding.get(self.unk_token)
 
     def get_token_embbedding(self, token):
+        """
+            Return the vector give a token. If not present find the average vector and return it.
+            If word can't be split then use the unknown token and the vector corresponding to it.
+        """
         vec = self.embedding.get(token)
         if vec:
             return vec
@@ -97,6 +101,10 @@ class VocabBuilder():
                 return self.embedding[self.unk_token]
 
     def build_vocab_from_iterator(self, iterator, stop_words=[], min_freq=1, embedding=False):
+        """
+        Build the vocabulary from the token list that is passed to it by the build_vocab function. 
+        It checks whether each word satisfies the minimum frequency criterion and then removes the stop words.
+        """
         counter = Counter()
         for _item in iterator:
             counter.update(_item)
@@ -134,7 +142,10 @@ class VocabBuilder():
                       "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t",
                       "just", "don", "now", "'", ",", "''", "``", "'s", "!", "(", ")", "-", "[",
                       "]", "{", "}", ";", ":", "?", "@", "*", "_", "~", "."]
-
+        """
+            A wrapper function and is used to create the token list from the input list of text. 
+            Also it loads the pre trained embeddings into the memory.
+        """
         self.unk_token = unk_token
         self.pad_token = pad_token
         self.lower = lower
