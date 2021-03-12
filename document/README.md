@@ -22,4 +22,29 @@
     
     The module handles handling of categorical data.
     * `LabelEncoder` Class takes a list of categorical data and identifies the unique values and stores them, so that they can be used in an index encoded format.
-        * `build_labels` function
+        * `build_labels` function accepts the list of labels and identify the unique ones and store them.
+        * `convert_labels_to_encodings` given a label return the index of the label from our vocab(Encoding)
+        * `convert_encodings_to_labels` Given an encoding retrieve the label based on index
+
+* src/preprocessor/text.py
+  
+  This module contains the code for preprocessing input data and building vocabulary from it.
+  
+  * `VocabBuilder` is a class that is used to build the text vocabulary. Missing words from the text vacabulary are handled in the constructor of the class itself.
+    
+    * `_basic_english_normalise` function is used to tokenise the input string
+ 
+    * `find_n_gram` is used function to split the word into ngrams
+
+    * `find_average_vector` function is used to find the average of the embeddings of the individual ngrams to get the embedding of the word.
+
+    * `get_token_embedding` function is used to get the embedding of the tokens. If the token is present in the word vocabulary and its embedding is present in the embedding layer, then we will retrieve the embedding of the token from the layer. 
+    Otherwise, if the token can be split into ngrams, then we will calculate the embedding as the average of the embeddings of the individual ngrams but if the token cannot be split further, then we will represent it as '#UNK#' and use the vector corresponding to the unknown token.
+
+    * `build_vocab_from_iterator` function is used to build the vocabulary from the token list that is passed to it by the `build_vocab` function. It checks whether each word satisfies the minimum frequency criterion and then removes the stop words.
+
+    * `build_vocab` is a wrapper function and is used to create the token list from the input list of text. Also it loads the pre trained embeddings into the memory.
+
+    * `convert_sentences_to_encoding` function is used to get the encoded tokens from the list of input sentences.
+ 
+    * `convert_encoding_to_sentences` function is used to get the list of sentences from the encoded sentence tokens

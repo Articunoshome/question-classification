@@ -52,6 +52,10 @@ class VocabBuilder():
         self.lower = lowercase
 
     def _basic_english_normalize(self, line):
+        """
+            Basic english tokenisation, splitting on spaces.
+            The regex helps handle wrapped words as well
+        """
         if self.lower:
             line = line.lower()
         for pattern_re, replaced_str in _patterns_dict:
@@ -59,9 +63,16 @@ class VocabBuilder():
         return line.split()
 
     def find_n_gram(self, word, n=3):
+        """
+            Given a word and n, return all the n grams
+        """
         return [word[i:i+n] for i in range(len(word)-n+1)]
 
     def find_average_vector(self, word, n=3):
+        """
+            Identify all the n grams based on the size of the word, find the 
+            average of all the vectors corresponding to these ngrams.
+        """
         _w_n = len(word)
         vecs = []
         if _w_n <= 3:
